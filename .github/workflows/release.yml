@@ -74,7 +74,7 @@ jobs:
           sbom: true
 
       - name: Scan (report; fail on CRITICAL only)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.name }}:${{ steps.meta.outputs.version }}
           format: table
@@ -83,7 +83,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Fail on CRITICAL
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.name }}:${{ steps.meta.outputs.version }}
           format: table
@@ -92,7 +92,7 @@ jobs:
           ignore-unfixed: true
 
       - name: SBOM (CycloneDX)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.name }}:${{ steps.meta.outputs.version }}
           format: cyclonedx
