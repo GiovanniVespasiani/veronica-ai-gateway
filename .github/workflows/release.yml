@@ -60,6 +60,13 @@ jobs:
             type=sha,format=long
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') }}
 
+      - name: Lowercase image reference
+        id: img
+        run: |
+          owner=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "repo=${REGISTRY}/${owner}/${{ matrix.name }}" >> "$GITHUB_OUTPUT"
+          echo "ref=${REGISTRY}/${owner}/${{ matrix.name }}:${{ steps.meta.outputs.version }}" >> "$GITHUB_OUTPUT"
+
       - name: Build linux/amd64
         uses: docker/build-push-action@v6
         with:
@@ -76,7 +83,7 @@ jobs:
       - name: Scan (report; fail on CRITICAL only)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.name }}:${{ steps.meta.outputs.version }}
+          image-ref: ${{ steps.img.outputs.ref }}
           format: table
           severity: HIGH,CRITICAL
           exit-code: "0"
@@ -85,7 +92,7 @@ jobs:
       - name: Fail on CRITICAL
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.name }}:${{ steps.meta.outputs.version }}
+          image-ref: ${{ steps.img.outputs.ref }}
           format: table
           severity: CRITICAL
           exit-code: "1"
@@ -94,7 +101,7 @@ jobs:
       - name: SBOM (CycloneDX)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.name }}:${{ steps.meta.outputs.version }}
+          image-ref: ${{ steps.img.outputs.ref }}
           format: cyclonedx
           output: sbom-${{ matrix.name }}.cdx.json
 
@@ -110,12 +117,10 @@ jobs:
       - name: Sign published digest
         if: ${{ inputs.publish == true || startsWith(github.ref, 'refs/tags/') }}
         run: |
-          digest=$(docker buildx imagetools inspect \
-            "${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.name }}:${{ steps.meta.outputs.version }}" \
+          digest=$(docker buildx imagetools inspect "${{ steps.img.outputs.ref }}" \
             --format '{{json .Manifest.Digest}}' | tr -d '"')
           echo "signing $digest"
-          cosign sign --yes \
-            "${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.name }}@${digest}"
+          cosign sign --yes "${{ steps.img.outputs.repo }}@${digest}"
 
       - name: Record digest
         run: |
