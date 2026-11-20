@@ -1,0 +1,14 @@
+# NOT APPLIED. Review only.
+#
+# secret.example.yaml is deliberately excluded: the real Secret is created
+# out-of-band and must never live in version control.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ai-gateway
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml
+  - deployment.yaml
+  - service.yaml
+  - networkpolicy-ingress.yaml
+  - networkpolicy-egress.yaml

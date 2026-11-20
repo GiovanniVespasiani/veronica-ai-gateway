@@ -1,0 +1,5 @@
+.build/
+bin/
+*.log
+.DS_Store
+deploy/ai-gateway/secret.example.yaml

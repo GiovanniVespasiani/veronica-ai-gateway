@@ -1,0 +1,43 @@
+# Egress is limited to DNS and TCP/443 to the public internet.
+# Private, link-local, CGNAT (Tailscale) and metadata ranges are excluded, so
+# the pod cannot reach the cluster, the LAN, the tailnet, or a cloud metadata
+# service even if the binary were compromised.
+#
+# NOTE: Calico OSS cannot match on domain names. The destination host is pinned
+# in code (config.ProductionUpstreamBaseURL), not by this policy.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ai-gateway-egress
+  namespace: ai-gateway
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: ai-gateway
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 169.254.0.0/16
+              - 100.64.0.0/10
+      ports:
+        - protocol: TCP
+          port: 443
